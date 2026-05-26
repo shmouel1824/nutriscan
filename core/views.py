@@ -100,7 +100,7 @@ def landing_view(request):
             login(request, user)
             messages.success(request, f"Welcome to NutriScan, {user.first_name or user.username}! "
                                        f"Let's set up your profile.")
-            return redirect('core: core:profile_setup')
+            return redirect('core:profile_setup')
 
     context = {
         'register_form' : register_form,
