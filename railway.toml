@@ -7,7 +7,5 @@ builder = "nixpacks"
 
 [deploy]
 startCommand = "gunicorn nutriscan_project.wsgi:application --bind 0.0.0.0:$PORT"
-restartPolicyType = "on-failure"
-
-[deploy.preDeployCommand]
-command = "python manage.py migrate --noinput"
+preDeployCommand = "python manage.py migrate --noinput"
+restartPolicyType = "ON_FAILURE"
