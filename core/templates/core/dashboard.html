@@ -1,0 +1,519 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  .dashboard-wrap {
+    padding: 48px 0 80px;
+  }
+
+  .dash-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 36px;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .dash-greeting {
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    font-weight: 800;
+    letter-spacing: -0.5px;
+  }
+
+  .dash-greeting span {
+    color: var(--lime);
+  }
+
+  .dash-date {
+    font-size: 13px;
+    color: var(--text-3);
+    font-family: var(--font-mono);
+  }
+
+  .profile-banner {
+    background: var(--amber-bg);
+    border: 1px solid rgba(244, 169, 66, 0.25);
+    border-radius: var(--radius-lg);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .profile-banner p {
+    color: var(--amber);
+    font-size: 14px;
+    margin: 0;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .calorie-card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+    margin-bottom: 28px;
+  }
+
+  .calorie-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .calorie-label {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-3);
+  }
+
+  .calorie-vals {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+
+  .calorie-current {
+    font-family: var(--font-body);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--text-1);
+  }
+
+  .calorie-target {
+    font-size: 13px;
+    color: var(--text-3);
+  }
+
+  .charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+
+  .chart-card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+  }
+
+  .chart-title {
+    font-size: 13px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-3);
+    margin-bottom: 16px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-1);
+  }
+
+  .entry-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .entry-card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-decoration: none;
+    transition: border-color .15s, background .15s;
+  }
+
+  .entry-card:hover {
+    border-color: var(--border-md);
+    background: var(--bg-3);
+    opacity: 1;
+  }
+
+  .entry-thumb {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--bg-4);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+  }
+
+  .entry-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .entry-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .entry-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+  }
+
+  .entry-meta {
+    font-size: 12px;
+    color: var(--text-3);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .entry-score {
+    font-family: var(--font-body);
+    font-size: 1.4rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .top-foods {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .top-food-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+  }
+
+  .top-food-rank {
+    color: var(--text-3);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    min-width: 20px;
+  }
+
+  .top-food-name {
+    flex: 1;
+    color: var(--text-2);
+  }
+
+  .top-food-count {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-3);
+  }
+
+  .profile-mini {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+  }
+
+  .profile-mini-title {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-3);
+    margin-bottom: 14px;
+  }
+
+  .profile-data-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .profile-data-label {
+    font-size: 12px;
+    color: var(--text-3);
+  }
+
+  .profile-data-val {
+    font-size: 12px;
+    color: var(--text-2);
+    font-weight: 500;
+    font-family: var(--font-mono);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 56px 24px;
+    color: var(--text-3);
+  }
+
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: 12px;
+  }
+
+  .empty-text {
+    font-size: 15px;
+    margin-bottom: 20px;
+  }
+
+  @media(max-width:900px) {
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr)
+    }
+
+    .charts-row {
+      grid-template-columns: 1fr
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrap">
+  <div class="container">
+
+    <div class="dash-header">
+      <div>
+        <div class="dash-greeting">
+          
+          <span data-i18n="Good day,">Good day,</span> <span>
+            {% if user.first_name %}{{ user.first_name }}{% else %}{{ user.username }}{% endif %}
+          </span> 👋
+        </div>
+        <div class="dash-date" id="todayDate"></div>
+      </div>
+      <a href="{% url 'core:analyze' %}" class="btn btn-primary">
+        <span data-i18n="+ Analyse food">+ Analyse food</span>
+      </a>
+    </div>
+
+    {% if needs_profile %}
+    <div class="profile-banner">
+      <p>⚡ <span data-i18n="Complete your health profile">Complete your health profile</span></p>
+      <a href="{% url 'core:profile_setup' %}" class="btn btn-sm"
+        style="background:var(--amber);color:#0e0f0d;border:none">
+        <span data-i18n="Complete profile →">Complete profile →</span>
+      </a>
+    </div>
+    {% endif %}
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label" data-i18n="TOTAL ANALYSES">TOTAL ANALYSES</div>
+        <div class="stat-value" id="cntTotal">0</div>
+        <div class="stat-sub" data-i18n="all time">all time</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label" data-i18n="AVERAGE SCORE">AVERAGE SCORE</div>
+        <div class="stat-value" id="cntAvgScore">0</div>
+        <div class="stat-sub" data-i18n="out of 10">out of 10</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label" data-i18n="TODAY'S KCAL">TODAY'S KCAL</div>
+        <div class="stat-value" id="cntTodayKcal">0</div>
+        <div class="stat-sub">
+          {% if calorie_target %}of {{ calorie_target }} <span data-i18n="logged today">target</span>{% else %}<span
+            data-i18n="logged today">logged today</span>{% endif %}
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label" data-i18n="BMI">BMI</div>
+        <div
+          class="stat-value {% if profile.bmi %}{% if profile.bmi < 18.5 %}text-blue{% elif profile.bmi < 25 %}text-lime{% elif profile.bmi < 30 %}score-moderate{% else %}score-avoid{% endif %}{% endif %}">
+          {{ profile.bmi|default_if_none:"—" }}
+        </div>
+        <div class="stat-sub">{{ profile.bmi_category }}</div>
+      </div>
+    </div>
+
+    {% if calorie_target %}
+    <div class="calorie-card">
+      <div class="calorie-header">
+        <div class="calorie-label" data-i18n="TODAY'S CALORIE BUDGET">TODAY'S CALORIE BUDGET</div>
+        <div class="calorie-vals">
+          <span class="calorie-current">{{ today_calories }}</span>
+          <span class="calorie-target">/ {{ calorie_target }} kcal</span>
+        </div>
+      </div>
+      <div class="progress-wrap" style="height:8px">
+        <div
+          class="progress-bar {% if today_calories > calorie_target %}progress-red{% elif today_calories > calorie_target|add:'-200' %}progress-amber{% else %}progress-lime{% endif %}"
+          id="calorieProg" style="width:0%"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px">
+        <span class="text-small text-muted">0</span>
+        <span class="text-small text-muted">{{ calorie_target }}</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title" data-i18n="7-day calorie trend">7-day calorie trend</div>
+        <div style="height:200px"><canvas id="calorieTrendChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title" data-i18n="Score distribution">Score distribution</div>
+        <div style="height:200px;display:flex;align-items:center;justify-content:center">
+          <canvas id="scoreDistChart" style="max-width:200px;max-height:200px"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;gap:20px">
+      <div>
+        <div class="section-header">
+          <div class="section-title" data-i18n="Recent analyses">Recent analyses</div>
+          <a href="{% url 'core:history' %}" class="btn btn-ghost btn-sm" data-i18n="View all →">View all →</a>
+        </div>
+        {% if recent_entries %}
+        <div class="entry-list">
+          {% for entry in recent_entries %}
+          <a href="{% url 'core:result' entry.pk %}" class="entry-card">
+            <div class="entry-thumb">
+              {% if entry.image %}<img src="{{ entry.image.url }}" alt="{{ entry.predicted_name }}" />
+              {% elif entry.image_url %}<img src="{{ entry.image_url }}" alt=""
+                onerror="this.parentElement.textContent='🍽️'" />
+              {% else %}🍽️{% endif %}
+            </div>
+            <div class="entry-info">
+              <div class="entry-name">{{ entry.predicted_name }}</div>
+              <div class="entry-meta">
+                <span>{{ entry.portion_g }}g</span>
+                {% if entry.calories_for_portion %}<span>{{ entry.calories_for_portion }} kcal</span>{% endif %}
+                <span>{{ entry.created_at|timesince }} ago</span>
+              </div>
+            </div>
+            {% if entry.score_value %}
+            <div class="entry-score score-{{ entry.score_level }}">
+              {{ entry.score_value }}<span style="font-size:12px;color:var(--text-3)">/10</span>
+            </div>
+            {% endif %}
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">🥗</div>
+          <div class="empty-text">
+            <span data-i18n="No food analysed yet.">No food analysed yet.</span><br />
+            <span data-i18n="Start by scanning your first meal!">Start by scanning your first meal!</span>
+          </div>
+          <a href="{% url 'core:analyze' %}" class="btn btn-primary">
+            <span data-i18n="Analyse food →">Analyse food →</span>
+          </a>
+        </div>
+        {% endif %}
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        {% if top_foods %}
+        <div class="profile-mini">
+          <div class="profile-mini-title" data-i18n="Most analysed">Most analysed</div>
+          <div class="top-foods">
+            {% for food in top_foods %}
+            <div class="top-food-row">
+              <span class="top-food-rank">{{ forloop.counter }}</span>
+              <span class="top-food-name">{{ food.predicted_name }}</span>
+              <span class="top-food-count">×{{ food.count }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+        <div class="profile-mini">
+          <div class="profile-mini-title" data-i18n="Your profile">Your profile</div>
+          <div class="profile-data-row">
+            <span class="profile-data-label" data-i18n="Goal">Goal</span>
+            <span class="profile-data-val">{{ profile.get_health_goal_display|default_if_none:"—" }}</span>
+          </div>
+          <div class="profile-data-row">
+            <span class="profile-data-label" data-i18n="Activity">Activity</span>
+{% with activity=profile.get_activity_level_display %}
+<span class="profile-data-val">{% if activity %}{{ activity|truncatechars:16 }}{% else %}—{% endif %}</span>
+{% endwith %}          </div>
+          <div class="profile-data-row">
+            <span class="profile-data-label" data-i18n="Daily target">Daily target</span>
+            <span class="profile-data-val">{{ profile.daily_calorie_target|default_if_none:"—" }} kcal</span>
+          </div>
+          <div class="profile-data-row">
+            <span class="profile-data-label" data-i18n="TDEE">TDEE</span>
+            <span class="profile-data-val">{{ profile.tdee|default_if_none:"—" }} kcal</span>
+          </div>
+          <a href="{% url 'core:profile_edit' %}" class="btn btn-ghost btn-sm" style="width:100%;margin-top:12px"
+            data-i18n="Edit profile">Edit profile</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.getElementById('todayDate').textContent =
+    new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  window.addEventListener('load', () => {
+    animateCount(document.getElementById('cntTotal'), {{ total_analyses }}, 800);
+  animateCount(document.getElementById('cntAvgScore'), {{ avg_score }}, 1000, 1);
+  animateCount(document.getElementById('cntTodayKcal'), {{ today_calories }}, 1000);
+  const prog = document.getElementById('calorieProg');
+  if (prog) {
+    {% if calorie_target %}
+    const pct = Math.min(100, {{ today_calories }} / {{ calorie_target }} * 100);
+  requestAnimationFrame(() => { prog.style.transition = 'width 1.2s cubic-bezier(.4,0,.2,1)'; prog.style.width = pct + '%'; });
+  {% endif %}
+  }
+});
+  const trendData = {{ calorie_trend_json| safe }};
+  new Chart(document.getElementById('calorieTrendChart'), {
+    type: 'bar',
+    data: { labels: trendData.map(d => d.date), datasets: [{ data: trendData.map(d => d.calories), backgroundColor: trendData.map(d => d.calories > {{ calorie_target|default_if_none:2000 }} ? 'rgba(255,107,107,0.7)' : d.calories > 0 ? 'rgba(168,224,99,0.7)' : 'rgba(42,45,39,0.5)'), borderRadius: 6, borderSkipped: false }] },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#1a1c18', borderColor: '#30302a', borderWidth: 1, titleColor: '#f0ede6', bodyColor: '#a8a59e', callbacks: { label: ctx => ` ${ctx.raw} kcal` } } }, scales: { x: { grid: { display: false }, ticks: { color: '#6b6965', font: { family: 'DM Mono' } } }, y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#6b6965', font: { family: 'DM Mono' } } } } }
+});
+  const dist = {{ score_dist_json| safe }};
+  new Chart(document.getElementById('scoreDistChart'), {
+    type: 'doughnut',
+    data: { labels: ['Excellent', 'Good', 'Moderate', 'Poor', 'Avoid'], datasets: [{ data: [dist.excellent, dist.good, dist.moderate, dist.poor, dist.avoid], backgroundColor: ['#a8e063', '#6eb5ff', '#f4a942', '#f08c42', '#ff6b6b'], borderWidth: 2, borderColor: '#141512' }] },
+    options: { responsive: true, maintainAspectRatio: true, cutout: '70%', plugins: { legend: { position: 'bottom', labels: { color: '#a8a59e', font: { size: 11, family: 'DM Mono' }, padding: 10, boxWidth: 10 } }, tooltip: { backgroundColor: '#1a1c18', borderColor: '#30302a', borderWidth: 1, titleColor: '#f0ede6', bodyColor: '#a8a59e' } } }
+  });
+</script>
+{% endblock %}

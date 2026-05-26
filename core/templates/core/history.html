@@ -1,0 +1,118 @@
+
+{% extends 'base.html' %}
+{% block title %}Food History{% endblock %}
+{% block nav_history %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+.history-wrap { padding:48px 0 80px; }
+.history-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; flex-wrap:wrap; gap:14px; }
+.filter-bar { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:16px 20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:24px; }
+.filter-bar form { display:flex; align-items:center; gap:10px; flex:1; flex-wrap:wrap; }
+.filter-search { flex:1; min-width:180px; background:var(--bg-1); border:1px solid var(--border-md); border-radius:var(--radius-md); padding:9px 14px; color:var(--text-1); font-family:var(--font-body); font-size:13px; outline:none; transition:border-color .2s; }
+.filter-search:focus { border-color:var(--lime); }
+.filter-search::placeholder { color:var(--text-3); }
+.filter-select { background:var(--bg-1); border:1px solid var(--border-md); border-radius:var(--radius-md); padding:9px 32px 9px 12px; color:var(--text-1); font-family:var(--font-body); font-size:13px; outline:none; appearance:none; cursor:pointer; min-width:140px; }
+.filter-count { font-size:12px; color:var(--text-3); font-family:var(--font-mono); white-space:nowrap; }
+.entry-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
+.history-card { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); overflow:hidden; text-decoration:none; transition:all .2s; display:flex; flex-direction:column; }
+.history-card:hover { border-color:var(--border-md); transform:translateY(-2px); box-shadow:var(--shadow-md); opacity:1; }
+.history-card-img { width:100%; height:180px; object-fit:cover; display:block; background:var(--bg-4); }
+.history-card-placeholder { width:100%; height:180px; background:var(--bg-3); display:flex; align-items:center; justify-content:center; font-size:48px; }
+.history-card-body { padding:16px; flex:1; display:flex; flex-direction:column; gap:8px; }
+.history-card-name { font-family:var(--font-display); font-size:15px; font-weight:700; color:var(--text-1); line-height:1.2; }
+.history-card-meta { display:flex; align-items:center; justify-content:space-between; }
+.history-card-date { font-size:11px; color:var(--text-3); font-family:var(--font-mono); }
+.history-card-score { font-family:var(--font-body); font-size:1.2rem; font-weight:800; }
+.history-card-tags { display:flex; gap:6px; flex-wrap:wrap; }
+.pagination { display:flex; align-items:center; justify-content:center; gap:6px; margin-top:36px; }
+.page-btn { min-width:36px; height:36px; border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:13px; font-family:var(--font-mono); background:var(--bg-2); border:1px solid var(--border); color:var(--text-2); text-decoration:none; transition:all .15s; }
+.page-btn:hover { border-color:var(--border-md); color:var(--text-1); opacity:1; }
+.page-btn.current { background:var(--lime); color:#0e0f0d; border-color:var(--lime); font-weight:700; }
+.page-btn.disabled { opacity:0.3; pointer-events:none; }
+.empty-history { text-align:center; padding:80px 24px; color:var(--text-3); }
+.empty-history .icon { font-size:56px; margin-bottom:16px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-wrap">
+<div class="container">
+
+  <div class="history-header">
+    <div>
+      <h2 style="font-size:1.8rem;letter-spacing:-0.5px" data-i18n="Food history">Food history</h2>
+      <p style="margin-top:4px;font-size:13px">{{ total_count }} entr{{ total_count|pluralize:"y,ies" }}</p>
+    </div>
+    <a href="{% url 'core:analyze' %}" class="btn btn-primary" data-i18n="+ Analyse food">+ Analyse food</a>
+  </div>
+
+  <div class="filter-bar">
+    <form method="get">
+      <input type="text" name="q" class="filter-search"
+             data-i18n-placeholder="Search food name…"
+             placeholder="Search food name…" value="{{ search }}"/>
+      <select name="score" class="filter-select" onchange="this.form.submit()">
+        <option value="" data-i18n="All scores">All scores</option>
+        {% for val, label in score_choices %}
+        <option value="{{ val }}" {% if score_filter == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-ghost btn-sm" data-i18n="Filter">Filter</button>
+      {% if search or score_filter %}
+      <a href="{% url 'core:history' %}" class="btn btn-ghost btn-sm" data-i18n="✕ Clear">✕ Clear</a>
+      {% endif %}
+    </form>
+    <div class="filter-count">{{ page_obj.paginator.count }} result{{ page_obj.paginator.count|pluralize }}</div>
+  </div>
+
+  {% if page_obj %}
+  <div class="entry-grid">
+    {% for entry in page_obj %}
+    <a href="{% url 'core:result' entry.pk %}" class="history-card">
+      {% if entry.image %}<img class="history-card-img" src="{{ entry.image.url }}" alt="{{ entry.predicted_name }}"/>
+      {% elif entry.image_url %}
+        <img class="history-card-img" src="{{ entry.image_url }}" alt="{{ entry.predicted_name }}"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
+        <div class="history-card-placeholder" style="display:none">🍽️</div>
+      {% else %}<div class="history-card-placeholder">🍽️</div>{% endif %}
+      <div class="history-card-body">
+        <div class="history-card-name">{{ entry.predicted_name }}</div>
+        <div class="history-card-tags">
+          {% if entry.score_level %}<span class="badge score-bg-{{ entry.score_level }} score-{{ entry.score_level }}" style="font-size:10px">{{ entry.get_score_level_display }}</span>{% endif %}
+          <span class="badge badge-muted">{{ entry.portion_g }}g</span>
+          {% if entry.calories_for_portion %}<span class="badge badge-amber">{{ entry.calories_for_portion }} kcal</span>{% endif %}
+        </div>
+        <div class="history-card-meta">
+          <span class="history-card-date">{{ entry.created_at|date:"d M Y · H:i" }}</span>
+          {% if entry.score_value %}<span class="history-card-score score-{{ entry.score_level }}">{{ entry.score_value }}<span style="font-size:11px;color:var(--text-3)">/10</span></span>{% endif %}
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="pagination">
+    {% if page_obj.has_previous %}<a href="?page={{ page_obj.previous_page_number }}&q={{ search }}&score={{ score_filter }}" class="page-btn">←</a>{% else %}<span class="page-btn disabled">←</span>{% endif %}
+    {% for num in page_obj.paginator.page_range %}
+      {% if num == page_obj.number %}<span class="page-btn current">{{ num }}</span>
+      {% elif num == 1 or num == page_obj.paginator.num_pages or num|add:"-1" == page_obj.number or num|add:"1" == page_obj.number %}
+        <a href="?page={{ num }}&q={{ search }}&score={{ score_filter }}" class="page-btn">{{ num }}</a>
+      {% endif %}
+    {% endfor %}
+    {% if page_obj.has_next %}<a href="?page={{ page_obj.next_page_number }}&q={{ search }}&score={{ score_filter }}" class="page-btn">→</a>{% else %}<span class="page-btn disabled">→</span>{% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-history">
+    <div class="icon">🔍</div>
+    <p data-i18n="No entries match your filters.">No entries match your filters.</p>
+    <a href="{% url 'core:history' %}" class="btn btn-ghost btn-sm" style="margin-top:12px" data-i18n="Clear filters">Clear filters</a>
+  </div>
+  {% endif %}
+
+</div>
+</div>
+{% endblock %}

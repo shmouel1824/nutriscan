@@ -1,0 +1,35 @@
+# ════════════════════════════════════════════════════════════
+#  NutriScan — requirements.txt
+#  Compatible with Railway (Python 3.11)
+# ════════════════════════════════════════════════════════════
+
+# ── Core Django ───────────────────────────────────────────
+Django==4.2.13
+gunicorn==22.0.0
+
+# ── Database (Railway uses PostgreSQL) ───────────────────
+psycopg2-binary==2.9.9
+dj-database-url==2.1.0
+
+# ── Static files (Railway / WhiteNoise) ──────────────────
+whitenoise==6.7.0
+
+# ── Admin UI ─────────────────────────────────────────────
+django-jazzmin==3.0.0
+
+# ── Image handling ────────────────────────────────────────
+Pillow==10.3.0
+
+# ── Environment / config ─────────────────────────────────
+python-decouple==3.8
+
+# ── HTTP requests (USDA API) ─────────────────────────────
+requests==2.32.3
+
+# ── Deep Learning (ML predictor) ─────────────────────────
+tensorflow==2.13.0
+numpy==1.24.3
+
+# ── Forms ────────────────────────────────────────────────
+django-crispy-forms==2.1
+crispy-bootstrap5==0.7

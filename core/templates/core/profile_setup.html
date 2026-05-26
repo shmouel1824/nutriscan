@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block nav_profile %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+.profile-wrap{padding:56px 0 80px}
+.profile-grid{display:grid;grid-template-columns:280px 1fr;gap:28px;align-items:start}
+.steps-sidebar{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-xl);padding:24px;position:sticky;top:80px}
+.steps-title{font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px;color:var(--text-3);margin-bottom:16px}
+.step-item{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:var(--radius-md);cursor:pointer;transition:all .15s;margin-bottom:4px}
+.step-item:hover{background:var(--bg-3)}
+.step-item.active{background:var(--lime-bg)}
+.step-dot{width:28px;height:28px;border-radius:50%;background:var(--bg-4);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--text-3);flex-shrink:0;transition:all .15s}
+.step-item.active .step-dot{background:var(--lime);color:#0e0f0d;border-color:var(--lime)}
+.step-label{font-size:13px;color:var(--text-2);font-weight:500}
+.step-item.active .step-label{color:var(--text-1)}
+.sidebar-profile-info{margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
+.spi-label{font-size:11px;color:var(--text-3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.3px}
+.spi-val{font-family:var(--font-body);font-size:1.8rem;font-weight:800;color:var(--lime)}
+.form-section{display:none}
+.form-section.active{display:block;animation:fadeUp .25s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.section-title{font-family:var(--font-display);font-size:1.5rem;font-weight:800;letter-spacing:-.3px;margin-bottom:6px}
+.section-desc{color:var(--text-3);font-size:13.5px;margin-bottom:28px}
+.form-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-3col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.checkbox-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-nav{display:flex;justify-content:space-between;align-items:center;margin-top:32px;padding-top:24px;border-top:1px solid var(--border)}
+.bmi-display{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;margin-top:16px}
+.bmi-num{font-family:var(--font-body);font-size:2rem;font-weight:800}
+.bmi-cat{font-size:13px;color:var(--text-3)}
+.goal-card{text-align:center;cursor:pointer;transition:all .2s;padding:14px}
+@media(max-width:800px){.profile-grid{grid-template-columns:1fr}.steps-sidebar{position:static;display:flex;gap:8px;flex-wrap:wrap;padding:16px}.steps-title{display:none}.form-2col,.form-3col{grid-template-columns:1fr}.checkbox-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-wrap">
+<div class="container">
+  <div class="profile-grid">
+
+    <!-- Sidebar -->
+    <div class="steps-sidebar">
+      <div class="steps-title" data-i18n="Setup steps">Setup steps</div>
+      <div class="step-item active" id="step-nav-1" onclick="goStep(1)">
+        <div class="step-dot" id="dot-1">1</div>
+        <div class="step-label" data-i18n="Body metrics">Body metrics</div>
+      </div>
+      <div class="step-item" id="step-nav-2" onclick="goStep(2)">
+        <div class="step-dot" id="dot-2">2</div>
+        <div class="step-label" data-i18n="Lifestyle">Lifestyle</div>
+      </div>
+      <div class="step-item" id="step-nav-3" onclick="goStep(3)">
+        <div class="step-dot" id="dot-3">3</div>
+        <div class="step-label" data-i18n="Medical flags">Medical flags</div>
+      </div>
+      <div class="sidebar-profile-info" id="bmiSidebar" style="display:none">
+        <div class="spi-label" data-i18n="YOUR BMI">YOUR BMI</div>
+        <div class="spi-val" id="sideBMI">—</div>
+        <div class="spi-label" id="sideBMICat" style="margin-top:4px"></div>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div>
+    <form method="post" id="profileForm">
+      {% csrf_token %}
+
+      <!-- Step 1: Body -->
+      <div class="form-section active" id="section-1">
+        <div class="section-title" data-i18n="Body metrics">Body metrics</div>
+        <div class="section-desc" data-i18n="Used to compute your BMI and daily calorie target (TDEE).">Used to compute your BMI and daily calorie target (TDEE).</div>
+        <div class="form-2col">
+          <div class="form-group">
+            <label class="form-label" data-i18n="Age">Age</label>
+            <input type="number" name="age" class="ns-input" placeholder="28"
+                   min="10" max="120" value="{{ form.age.value|default_if_none:'' }}" oninput="updateBMI()"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="Biological sex">Biological sex</label>
+            <select name="biological_sex" class="ns-select">
+              {% for val, label in form.fields.biological_sex.choices %}
+              <option value="{{ val }}" {% if form.biological_sex.value == val %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-2col">
+          <div class="form-group">
+            <label class="form-label" data-i18n="Height (cm)">Height (cm)</label>
+            <input type="number" name="height_cm" class="ns-input" placeholder="175"
+                   min="50" max="300" step="0.1"
+                   value="{{ form.height_cm.value|default_if_none:'' }}" oninput="updateBMI()"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" data-i18n="Weight (kg)">Weight (kg)</label>
+            <input type="number" name="weight_kg" class="ns-input" placeholder="72.5"
+                   min="10" max="500" step="0.1"
+                   value="{{ form.weight_kg.value|default_if_none:'' }}" oninput="updateBMI()"/>
+          </div>
+        </div>
+        <div class="bmi-display">
+          <div>
+            <div class="form-label" data-i18n="Live BMI estimate">Live BMI estimate</div>
+            <div class="bmi-cat" id="bmiCatText" data-i18n="Fill height and weight above">Fill height and weight above</div>
+          </div>
+          <div class="bmi-num" id="bmiNum">—</div>
+        </div>
+      </div>
+
+      <!-- Step 2: Lifestyle -->
+      <div class="form-section" id="section-2">
+        <div class="section-title" data-i18n="Lifestyle">Lifestyle</div>
+        <div class="section-desc">Determines your calorie needs and personalised scoring weights.</div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="Activity level">Activity level</label>
+          <select name="activity_level" class="ns-select">
+            {% for val, label in form.fields.activity_level.choices %}
+            <option value="{{ val }}" {% if form.activity_level.value == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="margin-top:20px">
+          <label class="form-label" data-i18n="Health goal">Health goal</label>
+          <div class="form-3col">
+            {% for val, label in form.fields.health_goal.choices %}
+            <label style="cursor:pointer">
+              <input type="radio" name="health_goal" value="{{ val }}" style="display:none"
+                     {% if form.health_goal.value == val or not form.health_goal.value and val == 'maintain' %}checked{% endif %}/>
+              <div class="card card-sm goal-card">
+                <div style="font-size:22px;margin-bottom:6px">
+                  {% if val == 'lose_weight' %}🔥{% elif val == 'maintain' %}⚖️{% elif val == 'gain_muscle' %}💪{% else %}❤️{% endif %}
+                </div>
+                <div style="font-size:12px;font-weight:600;color:var(--text-1)">{{ label|truncatechars:20 }}</div>
+              </div>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Medical -->
+      <div class="form-section" id="section-3">
+        <div class="section-title" data-i18n="Medical & dietary flags">Medical &amp; dietary flags</div>
+        <div class="section-desc" data-i18n="These affect your personalised score — high-risk items are flagged automatically.">These affect your personalised score — high-risk items are flagged automatically.</div>
+        <div class="checkbox-grid">
+          <label class="ns-checkbox-wrap">
+            <input type="checkbox" name="has_diabetes" class="ns-checkbox" {% if form.has_diabetes.value %}checked{% endif %}/>
+            <span class="ns-checkbox-label" data-i18n="🩺 Diabetes">🩺 Diabetes</span>
+          </label>
+          <label class="ns-checkbox-wrap">
+            <input type="checkbox" name="has_hypertension" class="ns-checkbox" {% if form.has_hypertension.value %}checked{% endif %}/>
+            <span class="ns-checkbox-label" data-i18n="❤️ Hypertension">❤️ Hypertension</span>
+          </label>
+          <label class="ns-checkbox-wrap">
+            <input type="checkbox" name="is_vegetarian" class="ns-checkbox" {% if form.is_vegetarian.value %}checked{% endif %}/>
+            <span class="ns-checkbox-label" data-i18n="🌿 Vegetarian">🌿 Vegetarian</span>
+          </label>
+          <label class="ns-checkbox-wrap">
+            <input type="checkbox" name="is_vegan" class="ns-checkbox" {% if form.is_vegan.value %}checked{% endif %}/>
+            <span class="ns-checkbox-label" data-i18n="🌱 Vegan">🌱 Vegan</span>
+          </label>
+          <label class="ns-checkbox-wrap">
+            <input type="checkbox" name="is_gluten_free" class="ns-checkbox" {% if form.is_gluten_free.value %}checked{% endif %}/>
+            <span class="ns-checkbox-label" data-i18n="🌾 Gluten intolerant">🌾 Gluten intolerant</span>
+          </label>
+          <label class="ns-checkbox-wrap">
+            <input type="checkbox" name="is_lactose_free" class="ns-checkbox" {% if form.is_lactose_free.value %}checked{% endif %}/>
+            <span class="ns-checkbox-label" data-i18n="🥛 Lactose intolerant">🥛 Lactose intolerant</span>
+          </label>
+          <label class="ns-checkbox-wrap">
+            <input type="checkbox" name="has_nut_allergy" class="ns-checkbox" {% if form.has_nut_allergy.value %}checked{% endif %}/>
+            <span class="ns-checkbox-label" data-i18n="🥜 Nut allergy">🥜 Nut allergy</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Nav buttons -->
+      <div class="form-nav">
+        <button type="button" class="btn btn-ghost" id="btnBack"
+                style="visibility:hidden" onclick="prevStep()" data-i18n="← Back">← Back</button>
+        <button type="button" class="btn btn-primary" id="btnNext"
+                onclick="nextStep()" data-i18n="Next step →">Next step →</button>
+        <button type="submit" class="btn btn-primary" id="btnSave"
+                style="display:none" data-i18n="Save profile ✓">Save profile ✓</button>
+      </div>
+
+    </form>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let currentStep = 1;
+const totalSteps = 3;
+function goStep(n) {
+  document.getElementById('section-'+currentStep).classList.remove('active');
+  document.getElementById('step-nav-'+currentStep).classList.remove('active');
+  currentStep = n;
+  document.getElementById('section-'+n).classList.add('active');
+  document.getElementById('step-nav-'+n).classList.add('active');
+  document.getElementById('btnBack').style.visibility = n > 1 ? 'visible' : 'hidden';
+  document.getElementById('btnNext').style.display = n < totalSteps ? '' : 'none';
+  document.getElementById('btnSave').style.display = n === totalSteps ? '' : 'none';
+  // Re-apply translations after step change
+  if (typeof NutriLang !== 'undefined') NutriLang.apply(NutriLang.current);
+}
+function nextStep(){ if(currentStep<totalSteps) goStep(currentStep+1); }
+function prevStep(){ if(currentStep>1) goStep(currentStep-1); }
+
+function updateBMI() {
+  const h = parseFloat(document.querySelector('[name=height_cm]').value);
+  const w = parseFloat(document.querySelector('[name=weight_kg]').value);
+  if (h > 0 && w > 0) {
+    const bmi = w / ((h/100)**2);
+    const bmiRound = bmi.toFixed(1);
+    let cat = '', color = 'var(--text-1)';
+    if      (bmi < 18.5) { cat='Underweight'; color='var(--blue)'; }
+    else if (bmi < 25)   { cat='Normal weight'; color='var(--lime)'; }
+    else if (bmi < 30)   { cat='Overweight'; color='var(--amber)'; }
+    else                 { cat='Obese'; color='var(--red)'; }
+    document.getElementById('bmiNum').textContent = bmiRound;
+    document.getElementById('bmiNum').style.color = color;
+    document.getElementById('bmiCatText').textContent = cat;
+    document.getElementById('sideBMI').textContent = bmiRound;
+    document.getElementById('sideBMI').style.color = color;
+    document.getElementById('sideBMICat').textContent = cat;
+    document.getElementById('bmiSidebar').style.display = '';
+  }
+}
+updateBMI();
+</script>
+{% endblock %}

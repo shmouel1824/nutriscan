@@ -1,0 +1,204 @@
+
+{% extends 'base.html' %}
+{% block title %}{{ entry.predicted_name }} — Result{% endblock %}
+
+{% block extra_head %}
+<style>
+.result-wrap{padding:48px 0 80px}
+.result-hero{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px}
+.food-identity{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-xl);padding:32px;display:flex;flex-direction:column;gap:16px}
+.food-image-wrap{width:100%;aspect-ratio:4/3;border-radius:var(--radius-lg);overflow:hidden;background:var(--bg-3);position:relative}
+.food-image{width:100%;height:100%;object-fit:cover;display:block}
+.food-image-placeholder{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--text-3);font-size:13px}
+.food-image-placeholder .placeholder-icon{font-size:40px}
+.food-label{font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);margin-bottom:6px}
+.food-name{font-family:var(--font-display);font-size:1.8rem;font-weight:800;color:var(--text-1);letter-spacing:-0.5px;line-height:1.1;margin-bottom:12px}
+.food-meta{display:flex;flex-wrap:wrap;gap:8px}
+.predictions{display:flex;flex-direction:column;gap:6px}
+.prediction-row{display:flex;align-items:center;gap:10px}
+.prediction-rank{width:20px;height:20px;border-radius:50%;background:var(--bg-4);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--text-3);flex-shrink:0}
+.prediction-rank.top{background:var(--lime-bg);color:var(--lime)}
+.prediction-name{flex:1;font-size:13.5px;color:var(--text-2)}
+.prediction-name.top{color:var(--text-1);font-weight:500}
+.prediction-bar-wrap{width:80px}
+.prediction-conf{font-size:12px;font-family:var(--font-mono);color:var(--text-3);min-width:38px;text-align:right}
+.score-panel{border-radius:var(--radius-xl);padding:32px;border:1px solid var(--border);position:relative;overflow:hidden}
+.score-ring-wrap{display:flex;flex-direction:column;align-items:center;margin-bottom:24px}
+.score-ring-svg{width:160px;height:160px}
+.score-ring-track{fill:none;stroke:var(--bg-4);stroke-width:10}
+.ring-progress{fill:none;stroke-width:10;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%}
+.score-ring-text{font-family:var(--font-body);font-weight:800;dominant-baseline:middle;text-anchor:middle}
+.score-ring-label{font-family:var(--font-mono);font-size:8px;text-transform:uppercase;letter-spacing:1px;dominant-baseline:middle;text-anchor:middle}
+.score-level-badge{padding:8px 20px;border-radius:99px;font-family:var(--font-display);font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border:1px solid;margin-bottom:16px}
+.score-summary-text{font-size:13.5px;color:var(--text-2);line-height:1.65;text-align:center;margin-bottom:20px}
+.rec-portion-box{background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.rec-portion-label{font-size:12px;color:var(--text-3);font-family:var(--font-mono)}
+.rec-portion-val{font-family:var(--font-body);font-size:1.3rem;font-weight:800;color:var(--lime)}
+.feedback-section{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+.feedback-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px}
+.feedback-title{font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
+.feedback-title.green{color:var(--lime)} .feedback-title.amber{color:var(--amber)}
+.feedback-item{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:var(--text-2);margin-bottom:8px;line-height:1.5}
+.feedback-dot{width:6px;height:6px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.feedback-dot.green{background:var(--lime)} .feedback-dot.amber{background:var(--amber)}
+.sub-scores-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px}
+.sub-score-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px}
+.sub-score-name{font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.4px;color:var(--text-3);margin-bottom:8px}
+.sub-score-val{font-family:var(--font-body);font-size:1.5rem;font-weight:800;margin-bottom:8px}
+.sub-score-bar{height:3px;background:var(--bg-4);border-radius:99px;overflow:hidden}
+.sub-score-fill{height:100%;border-radius:99px}
+.nutrients-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-xl);padding:28px;margin-bottom:28px}
+.nutrients-title{font-family:var(--font-display);font-size:1rem;font-weight:700;color:var(--text-1);margin-bottom:4px}
+.nutrients-subtitle{font-size:12px;color:var(--text-3);margin-bottom:20px}
+.action-bar{display:flex;gap:12px;flex-wrap:wrap}
+@media(max-width:768px){.result-hero,.feedback-section{grid-template-columns:1fr}.sub-scores-grid{grid-template-columns:repeat(2,1fr)}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="result-wrap">
+<div class="container">
+
+  <div class="result-hero">
+    <div class="food-identity">
+      <div class="food-image-wrap">
+        {% if entry.image %}<img class="food-image" src="{{ entry.image.url }}" alt="{{ entry.predicted_name }}"/>
+        {% elif entry.image_url %}<img class="food-image" src="{{ entry.image_url }}" alt="{{ entry.predicted_name }}" onerror="this.style.display='none'"/>
+        {% else %}<div class="food-image-placeholder"><span class="placeholder-icon">🍽️</span><span>{{ entry.predicted_name }}</span></div>{% endif %}
+      </div>
+      <div>
+        <div class="food-label" data-i18n="Identified food">Identified food</div>
+        <div class="food-name">{{ entry.predicted_name }}</div>
+        <div class="food-meta">
+          <span class="badge badge-lime">{{ entry.confidence }}% confident</span>
+          {% if food.food_category %}<span class="badge badge-muted">{{ food.food_category }}</span>{% endif %}
+          <span class="badge badge-muted">{{ entry.portion_g }}g portion</span>
+          {% if entry.calories_for_portion %}<span class="badge badge-amber">{{ entry.calories_for_portion }} kcal</span>{% endif %}
+        </div>
+      </div>
+      {% if entry.top3_predictions %}
+      <div>
+        <div class="food-label" style="margin-bottom:10px" data-i18n="Alternative predictions">Alternative predictions</div>
+        <div class="predictions">
+          {% for pred in entry.top3_predictions %}
+          <div class="prediction-row">
+            <div class="prediction-rank {% if forloop.first %}top{% endif %}">{{ forloop.counter }}</div>
+            <div class="prediction-name {% if forloop.first %}top{% endif %}">{{ pred.food }}</div>
+            <div class="prediction-bar-wrap"><div class="progress-wrap"><div class="progress-bar progress-lime" style="width:{{ pred.confidence }}%"></div></div></div>
+            <div class="prediction-conf">{{ pred.confidence }}%</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% with level=entry.score_level %}
+    <div class="score-panel score-bg-{{ level }}">
+      <div class="score-ring-wrap">
+        <svg class="score-ring-svg" viewBox="0 0 160 160" id="scoreRing" data-score="{{ entry.score_value }}">
+          <circle class="score-ring-track" cx="80" cy="80" r="64"/>
+          {% if level == 'excellent' %}<circle class="ring-progress" cx="80" cy="80" r="64" stroke="#a8e063"/>
+          {% elif level == 'good' %}<circle class="ring-progress" cx="80" cy="80" r="64" stroke="#6eb5ff"/>
+          {% elif level == 'moderate' %}<circle class="ring-progress" cx="80" cy="80" r="64" stroke="#f4a942"/>
+          {% elif level == 'poor' %}<circle class="ring-progress" cx="80" cy="80" r="64" stroke="#f08c42"/>
+          {% else %}<circle class="ring-progress" cx="80" cy="80" r="64" stroke="#ff6b6b"/>{% endif %}
+          <text class="score-ring-text score-{{ level }}" x="80" y="74" font-size="32">{{ entry.score_value }}</text>
+          <text class="score-ring-label" x="80" y="95" fill="#6b6965">out of 10</text>
+        </svg>
+      </div>
+      <div style="text-align:center">
+        <div class="score-level-badge score-{{ level }} score-bg-{{ level }}" style="display:inline-block" data-i18n="{{ entry.get_score_level_display|upper }}">{{ entry.get_score_level_display|upper }}</div>
+      </div>
+      <p class="score-summary-text">{{ entry.score_summary }}</p>
+      {% if entry.recommended_portion_g %}
+      <div class="rec-portion-box">
+        <div>
+          <div class="rec-portion-label" data-i18n="Recommended for you">Recommended for you</div>
+          <div class="rec-portion-val">{{ entry.recommended_portion_g }} g</div>
+        </div>
+        <div style="font-size:24px">🎯</div>
+      </div>
+      {% endif %}
+    </div>
+    {% endwith %}
+  </div>
+
+  {% if score_obj %}
+  <div class="feedback-section">
+    <div class="feedback-card">
+      <div class="feedback-title green" data-i18n="✓ Strengths">✓ Strengths</div>
+      {% for p in score_obj.positives %}
+      <div class="feedback-item"><div class="feedback-dot green"></div><span>{{ p }}</span></div>
+      {% empty %}
+      <div class="feedback-item" style="color:var(--text-3)" data-i18n="No notable strengths found.">No notable strengths found.</div>
+      {% endfor %}
+    </div>
+    <div class="feedback-card">
+      <div class="feedback-title amber" data-i18n="⚠ Watch out for">⚠ Watch out for</div>
+      {% for w in score_obj.warnings %}
+      <div class="feedback-item"><div class="feedback-dot amber"></div><span>{{ w }}</span></div>
+      {% empty %}
+      <div class="feedback-item" style="color:var(--text-3)" data-i18n="No concerns for your profile.">No concerns for your profile.</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if sub_scores %}
+  <div style="margin-bottom:12px">
+    <h3 style="font-size:1rem;color:var(--text-2);font-weight:600;margin-bottom:16px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px" data-i18n="Score breakdown">Score breakdown</h3>
+  </div>
+  <div class="sub-scores-grid">
+    {% for name, val in sub_scores %}
+    <div class="sub-score-card">
+      <div class="sub-score-name">{{ name }}</div>
+      <div class="sub-score-val {% if val >= 7.5 %}score-excellent{% elif val >= 5.5 %}score-good{% elif val >= 3.5 %}score-moderate{% else %}score-avoid{% endif %}">{{ val|floatformat:1 }}</div>
+      <div class="sub-score-bar">
+        <div class="sub-score-fill" style="width:{{ val|floatformat:0 }}0%; background:{% if val >= 7.5 %}var(--lime){% elif val >= 5.5 %}var(--blue){% elif val >= 3.5 %}var(--amber){% else %}var(--red){% endif %}"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if nutrient_rows %}
+  <div class="nutrients-card">
+    <div class="nutrients-title" data-i18n="Full nutrition breakdown">Full nutrition breakdown</div>
+    <div class="nutrients-subtitle" data-i18n="Data from USDA FoodData Central">Per {{ entry.portion_g }}g serving · Data from USDA FoodData Central</div>
+    {% for label, value, unit, icon in nutrient_rows %}
+    <div class="nutrient-row">
+      <div class="nutrient-label"><span class="icon">{{ icon }}</span>{{ label }}</div>
+      <div><span class="nutrient-value">{{ value }}</span><span class="nutrient-unit">{{ unit }}</span></div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="action-bar">
+    <a href="{% url 'core:analyze' %}" class="btn btn-primary" data-i18n="Analyse another food →">Analyse another food →</a>
+    <a href="{% url 'core:dashboard' %}" class="btn btn-ghost" data-i18n="Dashboard">Dashboard</a>
+    <form method="post" action="{% url 'core:delete_entry' entry.pk %}" style="margin:0">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="history"/>
+      <button type="submit" class="btn btn-danger btn-sm" style="height:44px"
+              onclick="return confirm('Delete this entry?')" data-i18n="Delete entry">Delete entry</button>
+    </form>
+  </div>
+
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+window.addEventListener('load',()=>{
+  const ring=document.getElementById('scoreRing');
+  if(ring) animateScoreRing(ring,parseFloat(ring.dataset.score));
+});
+document.querySelectorAll('.sub-score-fill').forEach(bar=>{
+  const w=bar.style.width; bar.style.width='0';
+  requestAnimationFrame(()=>{ bar.style.transition='width 1s cubic-bezier(.4,0,.2,1)'; bar.style.width=w; });
+});
+</script>
+{% endblock %}

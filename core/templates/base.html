@@ -1,0 +1,204 @@
+{% load i18n %}
+{% load static %}
+{% get_current_language as CURRENT_LANG %}
+<!DOCTYPE html>
+<html lang="{{ CURRENT_LANG }}" dir="{% if CURRENT_LANG == 'he' %}rtl{% else %}ltr{% endif %}">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>{% block title %}NutriScan{% endblock %} — AI Food Intelligence</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥗</text></svg>"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&family=Heebo:wght@300;400;500;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg-0:#0e0f0d; --bg-1:#141512; --bg-2:#1a1c18; --bg-3:#222420; --bg-4:#2a2d27;
+  --border:rgba(255,255,255,0.07); --border-md:rgba(255,255,255,0.12);
+  --text-1:#f0ede6; --text-2:#a8a59e; --text-3:#6b6965;
+  --lime:#a8e063; --lime-dim:#7aad3a; --lime-glow:rgba(168,224,99,0.15); --lime-bg:rgba(168,224,99,0.08);
+  --red:#ff6b6b; --red-bg:rgba(255,107,107,0.10);
+  --amber:#f4a942; --amber-bg:rgba(244,169,66,0.10);
+  --blue:#6eb5ff; --blue-bg:rgba(110,181,255,0.10);
+  --radius-sm:6px; --radius-md:12px; --radius-lg:18px; --radius-xl:28px;
+  --shadow-sm:0 2px 8px rgba(0,0,0,0.4); --shadow-md:0 4px 24px rgba(0,0,0,0.5); --shadow-lg:0 8px 48px rgba(0,0,0,0.6);
+  --font-display:'Syne',sans-serif; --font-body:'DM Sans',sans-serif;
+  --font-mono:'DM Mono',monospace; --font-he:'Heebo',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg-0);color:var(--text-1);min-height:100vh;font-size:15px;line-height:1.65}
+:lang(he) body,:lang(he) p,:lang(he) span,:lang(he) div,:lang(he) label,:lang(he) button,:lang(he) input,:lang(he) a{font-family:var(--font-he),var(--font-body)}
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;line-height:1.2;color:var(--text-1)}
+:lang(he) h1,:lang(he) h2,:lang(he) h3,:lang(he) h4{font-family:var(--font-he)}
+h1{font-size:clamp(2rem,5vw,3.5rem)} h2{font-size:clamp(1.5rem,3vw,2.2rem)} h3{font-size:1.2rem;font-weight:600}
+p{color:var(--text-2)} a{color:var(--lime);text-decoration:none;transition:opacity .2s} a:hover{opacity:0.8}
+.container{max-width:1100px;margin:0 auto;padding:0 24px}
+.container-sm{max-width:720px;margin:0 auto;padding:0 24px}
+.card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px}
+.card-sm{padding:20px}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:500;font-family:var(--font-mono);padding:3px 10px;border-radius:20px;letter-spacing:0.3px;text-transform:uppercase}
+.badge-lime{background:var(--lime-bg);color:var(--lime);border:1px solid rgba(168,224,99,0.2)}
+.badge-red{background:var(--red-bg);color:var(--red);border:1px solid rgba(255,107,107,0.2)}
+.badge-amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(244,169,66,0.2)}
+.badge-blue{background:var(--blue-bg);color:var(--blue);border:1px solid rgba(110,181,255,0.2)}
+.badge-muted{background:var(--bg-3);color:var(--text-3);border:1px solid var(--border)}
+.divider{border:none;border-top:1px solid var(--border);margin:24px 0}
+.text-lime{color:var(--lime)} .text-muted{color:var(--text-3)} .text-small{font-size:13px} .text-mono{font-family:var(--font-mono)}
+.score-excellent{color:var(--lime)} .score-good{color:var(--blue)} .score-moderate{color:var(--amber)} .score-poor{color:#f08c42} .score-avoid{color:var(--red)}
+.score-bg-excellent{background:var(--lime-bg);border-color:rgba(168,224,99,0.2)}
+.score-bg-good{background:var(--blue-bg);border-color:rgba(110,181,255,0.2)}
+.score-bg-moderate{background:var(--amber-bg);border-color:rgba(244,169,66,0.2)}
+.score-bg-poor{background:rgba(240,140,66,0.1);border-color:rgba(240,140,66,0.2)}
+.score-bg-avoid{background:var(--red-bg);border-color:rgba(255,107,107,0.2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--font-body);font-size:14px;font-weight:500;padding:11px 24px;border-radius:var(--radius-md);border:1px solid transparent;cursor:pointer;transition:all .2s ease;text-decoration:none;white-space:nowrap}
+.btn-primary{background:var(--lime);color:#0e0f0d;border-color:var(--lime)}
+.btn-primary:hover{background:#bff07a;border-color:#bff07a;box-shadow:0 0 24px rgba(168,224,99,0.3);opacity:1}
+.btn-ghost{background:transparent;color:var(--text-2);border-color:var(--border-md)}
+.btn-ghost:hover{background:var(--bg-3);color:var(--text-1);opacity:1}
+.btn-danger{background:var(--red-bg);color:var(--red);border-color:rgba(255,107,107,0.3)}
+.btn-lg{padding:14px 32px;font-size:15px;border-radius:var(--radius-lg)}
+.btn-sm{padding:7px 14px;font-size:12px;border-radius:var(--radius-sm)}
+.ns-input,.ns-select,.ns-textarea{display:block;width:100%;background:var(--bg-1);color:var(--text-1);border:1px solid var(--border-md);border-radius:var(--radius-md);padding:11px 16px;font-family:var(--font-body);font-size:14px;transition:border-color .2s,box-shadow .2s;outline:none}
+:lang(he) .ns-input,:lang(he) .ns-select{font-family:var(--font-he);direction:rtl}
+.ns-input:focus,.ns-select:focus{border-color:var(--lime);box-shadow:0 0 0 3px rgba(168,224,99,0.12)}
+.ns-input::placeholder{color:var(--text-3)}
+.ns-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6965' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+.ns-input-sm{padding:8px 12px;font-size:13px}
+.form-group{margin-bottom:18px}
+.form-label{display:block;font-size:13px;font-weight:500;color:var(--text-2);margin-bottom:6px;font-family:var(--font-mono);letter-spacing:0.3px}
+:lang(he) .form-label{font-family:var(--font-he)}
+.form-hint{font-size:12px;color:var(--text-3);margin-top:5px}
+.form-error{font-size:12px;color:var(--red);margin-top:5px;display:flex;align-items:center;gap:4px}
+.ns-checkbox-wrap{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg-3);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;transition:border-color .15s,background .15s}
+.ns-checkbox-wrap:hover{border-color:var(--lime);background:var(--lime-bg)}
+.ns-checkbox{width:16px;height:16px;accent-color:var(--lime);cursor:pointer;flex-shrink:0}
+.ns-checkbox-label{font-size:13px;color:var(--text-2)}
+/* Navbar */
+.navbar{position:sticky;top:0;z-index:100;background:rgba(14,15,13,0.85);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center}
+.nav-inner{max-width:1100px;width:100%;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+.nav-logo{font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--text-1);letter-spacing:-0.5px;display:flex;align-items:center;gap:8px;text-decoration:none}
+.nav-logo .logo-dot{color:var(--lime)}
+.nav-links{display:flex;align-items:center;gap:4px}
+.nav-link{font-size:13px;font-weight:500;color:var(--text-2);padding:6px 12px;border-radius:var(--radius-sm);text-decoration:none;transition:all .15s}
+.nav-link:hover{color:var(--text-1);background:var(--bg-3);opacity:1}
+.nav-link.active{color:var(--lime)}
+/* Language switcher */
+.lang-switcher{display:flex;align-items:center;gap:4px;background:var(--bg-3);border:1px solid var(--border);border-radius:20px;padding:3px;margin-left:8px}
+.lang-btn{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:16px;font-size:12px;font-weight:500;color:var(--text-3);background:none;border:none;cursor:pointer;transition:all .15s;font-family:var(--font-body)}
+.lang-btn:hover{color:var(--text-1);background:var(--bg-4);opacity:1}
+.lang-btn.active{background:var(--lime);color:#0e0f0d;font-weight:700}
+.lang-flag{font-size:16px;line-height:1}
+.lang-code{font-size:11px;font-weight:600}
+/* Messages */
+.messages-wrap{position:fixed;top:72px;right:20px;z-index:200;display:flex;flex-direction:column;gap:8px}
+:lang(he) .messages-wrap{right:auto;left:20px}
+.message{max-width:360px;padding:12px 18px;border-radius:var(--radius-md);font-size:13px;font-weight:500;box-shadow:var(--shadow-md);animation:slideIn .3s ease;display:flex;align-items:flex-start;gap:10px;cursor:pointer}
+.message-success{background:var(--bg-3);border:1px solid rgba(168,224,99,0.3);color:var(--lime)}
+.message-error{background:var(--bg-3);border:1px solid rgba(255,107,107,0.3);color:var(--red)}
+.message-warning{background:var(--bg-3);border:1px solid rgba(244,169,66,0.3);color:var(--amber)}
+.message-info{background:var(--bg-3);border:1px solid rgba(110,181,255,0.3);color:var(--blue)}
+@keyframes slideIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+.page-enter{animation:pageIn .4s ease both}
+@keyframes pageIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.spinner{width:20px;height:20px;border:2px solid var(--border-md);border-top-color:var(--lime);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.stat-card{background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px}
+.stat-label{font-size:11px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:0.5px;color:var(--text-3);margin-bottom:8px}
+:lang(he) .stat-label{font-family:var(--font-he);letter-spacing:0}
+.stat-value{font-family:var(--font-body);font-size:2rem;font-weight:800;color:var(--text-1);line-height:1}
+.stat-sub{font-size:12px;color:var(--text-3);margin-top:6px}
+.progress-wrap{background:var(--bg-3);border-radius:99px;height:6px;overflow:hidden}
+.progress-bar{height:100%;border-radius:99px;transition:width 1s ease}
+.progress-lime{background:var(--lime)} .progress-amber{background:var(--amber)} .progress-red{background:var(--red)}
+.nutrient-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.nutrient-row:last-child{border-bottom:none}
+.nutrient-label{font-size:13px;color:var(--text-2);display:flex;align-items:center;gap:8px}
+.nutrient-value{font-family:var(--font-mono);font-size:13px;font-weight:500;color:var(--text-1)}
+.nutrient-unit{font-size:11px;color:var(--text-3);margin-left:2px}
+.stat-value,.calorie-current,.portion-value,.bmi-num,.sub-score-val,.entry-score,.history-card-score,.spi-val,.rec-portion-val,.stat-pill .num{font-family:var(--font-body) !important}
+@media(max-width:768px){.hide-mobile{display:none !important}.container,.container-sm{padding:0 16px}.card{padding:20px}.lang-code{display:none}}
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% if user.is_authenticated %}
+<nav class="navbar">
+  <div class="nav-inner">
+    <a href="{% url 'core:dashboard' %}" class="nav-logo">
+      Nutri<span class="logo-dot">Scan</span>
+    </a>
+    <div class="nav-links">
+      
+<a href="{% url 'core:analyze' %}"      class="nav-link {% block nav_analyze %}{% endblock %}" data-i18n="Analyze">Analyze</a>
+<a href="{% url 'core:dashboard' %}"    class="nav-link {% block nav_dashboard %}{% endblock %}" data-i18n="Dashboard">Dashboard</a>
+<a href="{% url 'core:history' %}"      class="nav-link {% block nav_history %}{% endblock %}" data-i18n="History">History</a>
+<a href="{% url 'core:profile_edit' %}" class="nav-link {% block nav_profile %}{% endblock %}" data-i18n="Profile">Profile</a>
+<a href="/admin/" class="nav-link hide-mobile" data-i18n="Admin">Admin</a>
+
+      <div class="lang-switcher">
+        <button class="lang-btn {% if CURRENT_LANG == 'en' %}active{% endif %}"
+                data-lang="en" onclick="NutriLang.set('en')">
+          <span class="lang-flag">🇬🇧</span>
+          <span class="lang-code">EN</span>
+        </button>
+        <button class="lang-btn {% if CURRENT_LANG == 'he' %}active{% endif %}"
+                data-lang="he" onclick="NutriLang.set('he')">
+          <span class="lang-flag">🇮🇱</span>
+          <span class="lang-code">HE</span>
+        </button>
+      </div>
+      <form method="post" action="{% url 'core:logout' %}" style="margin:0">
+        {% csrf_token %}
+<button type="submit" class="btn btn-ghost btn-sm" style="margin-left:8px" data-i18n="Sign out">Sign out</button>
+      </form>
+    </div>
+  </div>
+</nav>
+{% endif %}
+
+{% if messages %}
+<div class="messages-wrap">
+  {% for message in messages %}
+  <div class="message message-{{ message.tags }}" onclick="this.remove()">
+    <span>{{ message }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<main class="page-enter">
+  {% block content %}{% endblock %}
+</main>
+
+<script>
+document.querySelectorAll('.message').forEach(m => {
+  setTimeout(() => m.style.animation = 'slideIn .3s ease reverse forwards', 3800);
+  setTimeout(() => m.remove(), 4100);
+});
+function animateCount(el, target, duration=1200, decimals=0) {
+  const start = performance.now();
+  const update = (now) => {
+    const p = Math.min((now-start)/duration, 1);
+    const eased = 1 - Math.pow(1-p, 3);
+    el.textContent = (eased*target).toFixed(decimals);
+    if (p < 1) requestAnimationFrame(update);
+  };
+  requestAnimationFrame(update);
+}
+function animateScoreRing(svgEl, score) {
+  const circle = svgEl.querySelector('.ring-progress');
+  if (!circle) return;
+  const r = parseFloat(circle.getAttribute('r'));
+  const circumference = 2 * Math.PI * r;
+  circle.style.strokeDasharray  = circumference;
+  circle.style.strokeDashoffset = circumference;
+  requestAnimationFrame(() => {
+    circle.style.transition = 'stroke-dashoffset 1.4s cubic-bezier(.4,0,.2,1)';
+    circle.style.strokeDashoffset = circumference * (1 - score/10);
+  });
+}
+</script>
+{% block extra_js %}{% endblock %}
+<script src="{% static 'js/nutriscan_translations.js' %}"></script>
+</body>
+</html>

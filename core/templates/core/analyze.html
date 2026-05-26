@@ -1,0 +1,215 @@
+
+{% extends 'base.html' %}
+{% block title %}Analyze Food{% endblock %}
+{% block nav_analyze %}active{% endblock %}
+{% load custom_filters %}
+
+{% block extra_head %}
+<style>
+.analyze-wrap { padding:56px 0 80px; }
+.page-header { margin-bottom:40px; }
+.page-kicker { font-size:11px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:2px; color:var(--lime); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.page-kicker::before { content:''; display:inline-block; width:20px; height:1px; background:var(--lime); }
+.method-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:32px; }
+.method-tab { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; cursor:pointer; transition:all .2s; display:flex; flex-direction:column; gap:8px; text-align:left; }
+.method-tab:hover { border-color:var(--border-md); background:var(--bg-3); }
+.method-tab.active { border-color:var(--lime); background:var(--lime-bg); box-shadow:0 0 0 1px var(--lime); }
+.method-tab input[type="radio"] { display:none; }
+.method-icon { font-size:24px; }
+.method-title { font-family:var(--font-display); font-size:14px; font-weight:700; color:var(--text-1); }
+.method-desc { font-size:12px; color:var(--text-3); }
+.input-section { display:none; }
+.input-section.visible { display:block; animation:fadeUp .25s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.drop-zone { border:2px dashed var(--border-md); border-radius:var(--radius-lg); padding:48px 32px; text-align:center; cursor:pointer; transition:all .2s; background:var(--bg-1); user-select:none; }
+.drop-zone:hover,.drop-zone.dragover { border-color:var(--lime); background:var(--lime-bg); }
+.drop-icon { font-size:36px; margin-bottom:12px; }
+.drop-title { font-family:var(--font-display); font-size:16px; font-weight:700; color:var(--text-1); margin-bottom:6px; }
+.drop-sub { font-size:13px; color:var(--text-3); }
+#id_image { display:none; }
+.img-preview-wrap { display:none; position:relative; border-radius:var(--radius-lg); overflow:hidden; border:1px solid var(--border-md); }
+.img-preview-wrap.visible { display:block; }
+.img-preview { width:100%; max-height:320px; object-fit:cover; display:block; }
+.img-preview-overlay { position:absolute; inset:0; background:linear-gradient(to top,rgba(0,0,0,0.6) 0%,transparent 50%); display:flex; align-items:flex-end; padding:16px; }
+.img-clear-btn { background:rgba(0,0,0,0.7); color:var(--text-2); border:1px solid var(--border-md); border-radius:var(--radius-sm); padding:6px 14px; font-size:12px; cursor:pointer; }
+.img-clear-btn:hover { background:var(--red-bg); color:var(--red); }
+.portion-section { background:var(--bg-2); border:1px solid var(--border); border-radius:var(--radius-lg); padding:24px; margin-top:20px; }
+.portion-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+.portion-label { font-size:13px; color:var(--text-2); font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.4px; }
+.portion-value { font-family:var(--font-body); font-size:1.4rem; font-weight:800; color:var(--lime); }
+.portion-unit { font-size:13px; color:var(--text-3); }
+input[type="range"].ns-range { -webkit-appearance:none; appearance:none; width:100%; height:4px; background:var(--bg-4); border-radius:99px; outline:none; cursor:pointer; }
+input[type="range"].ns-range::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:var(--lime); border:3px solid var(--bg-0); box-shadow:0 0 8px rgba(168,224,99,0.4); }
+.portion-presets { display:flex; gap:8px; margin-top:14px; flex-wrap:wrap; }
+.preset-btn { background:var(--bg-3); color:var(--text-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:5px 14px; font-size:12px; cursor:pointer; transition:all .15s; font-family:var(--font-mono); }
+.preset-btn:hover { border-color:var(--lime); color:var(--lime); background:var(--lime-bg); }
+.profile-nudge { background:var(--amber-bg); border:1px solid rgba(244,169,66,0.25); border-radius:var(--radius-md); padding:14px 18px; display:flex; align-items:center; gap:12px; font-size:13px; color:var(--amber); margin-bottom:24px; }
+.analyze-btn { width:100%; margin-top:24px; position:relative; overflow:hidden; }
+.analyze-btn .btn-inner { display:flex; align-items:center; justify-content:center; gap:10px; }
+.analyze-btn.loading .btn-inner { opacity:0; }
+.analyze-btn .loading-state { position:absolute; inset:0; display:none; align-items:center; justify-content:center; gap:10px; }
+.analyze-btn.loading .loading-state { display:flex; }
+@media(max-width:600px){ .method-tabs{grid-template-columns:1fr} }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="analyze-wrap">
+<div class="container-sm">
+
+  <div class="page-header">
+    <div class="page-kicker" data-i18n="food analysis">food analysis</div>
+    <h1 style="font-size:2rem;letter-spacing:-1px" data-i18n="What did you eat?">What did you eat?</h1>
+    <p style="margin-top:8px" data-i18n="Upload a photo, paste a link, or type the name. Our AI does the rest.">Upload a photo, paste a link, or type the name. Our AI does the rest.</p>
+  </div>
+
+  {% if needs_profile %}
+  <div class="profile-nudge">
+    ⚡ <span>Complete your <a href="{% url 'core:profile_setup' %}">health profile</a> to unlock personalised scoring.</span>
+  </div>
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" id="analyzeForm">
+    {% csrf_token %}
+    <div class="method-tabs" id="methodTabs">
+      <label class="method-tab {% if not form.input_method.value or form.input_method.value == 'image_upload' %}active{% endif %}" id="tab-image_upload">
+        <input type="radio" name="input_method" value="image_upload" {% if not form.input_method.value or form.input_method.value == 'image_upload' %}checked{% endif %}/>
+        <div class="method-icon">📷</div>
+        <div class="method-title" data-i18n="Upload photo">Upload photo</div>
+        <div class="method-desc">JPG, PNG, WEBP</div>
+      </label>
+      <label class="method-tab {% if form.input_method.value == 'image_url' %}active{% endif %}" id="tab-image_url">
+        <input type="radio" name="input_method" value="image_url" {% if form.input_method.value == 'image_url' %}checked{% endif %}/>
+        <div class="method-icon">🔗</div>
+        <div class="method-title" data-i18n="Image URL">Image URL</div>
+        <div class="method-desc">Paste any image link</div>
+      </label>
+      <label class="method-tab {% if form.input_method.value == 'text_name' %}active{% endif %}" id="tab-text_name">
+        <input type="radio" name="input_method" value="text_name" {% if form.input_method.value == 'text_name' %}checked{% endif %}/>
+        <div class="method-icon">✏️</div>
+        <div class="method-title" data-i18n="Type name">Type name</div>
+        <div class="method-desc">e.g. "sushi" or "pizza"</div>
+      </label>
+    </div>
+
+    <div class="input-section {% if not form.input_method.value or form.input_method.value == 'image_upload' %}visible{% endif %}" id="section-image_upload">
+      <input type="file" name="image" id="id_image" accept="image/*"/>
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon">🖼️</div>
+        <div class="drop-title" data-i18n="Drop your food photo here">Drop your food photo here</div>
+        <div class="drop-sub" data-i18n="or click to browse — JPG, PNG, WEBP up to 10 MB">or click to browse — JPG, PNG, WEBP up to 10 MB</div>
+      </div>
+      <div class="img-preview-wrap" id="previewWrap">
+        <img class="img-preview" id="imgPreview" src="" alt="Preview"/>
+        <div class="img-preview-overlay">
+          <button type="button" class="img-clear-btn" onclick="clearImage()">✕ Remove</button>
+        </div>
+      </div>
+      {% if form.image.errors %}<div class="form-error">{{ form.image.errors|join:", " }}</div>{% endif %}
+    </div>
+
+    <div class="input-section {% if form.input_method.value == 'image_url' %}visible{% endif %}" id="section-image_url">
+      <div class="form-group">
+        <label class="form-label" data-i18n="Image URL">Image URL</label>
+        <input type="url" name="image_url" class="ns-input" id="urlInput"
+               placeholder="https://example.com/pizza.jpg"
+               value="{{ form.image_url.value|default:'' }}" style="font-size:13px"/>
+        {% if form.image_url.errors %}<div class="form-error">{{ form.image_url.errors|join:", " }}</div>{% endif %}
+      </div>
+      <div class="img-preview-wrap" id="urlPreviewWrap">
+        <img class="img-preview" id="urlPreview" src="" alt="URL Preview" onerror="this.parentElement.classList.remove('visible')"/>
+      </div>
+    </div>
+
+    <div class="input-section {% if form.input_method.value == 'text_name' %}visible{% endif %}" id="section-text_name">
+      <div class="form-group">
+        <label class="form-label" data-i18n="Type name">Food name</label>
+        <input type="text" name="text_input" class="ns-input"
+               placeholder="e.g. grilled salmon, tiramisu, pad thai…"
+               value="{{ form.text_input.value|default:'' }}" style="font-size:15px"/>
+        {% if form.text_input.errors %}<div class="form-error">{{ form.text_input.errors|join:", " }}</div>{% endif %}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">
+        {% for food in "pizza,sushi,ramen,steak,tiramisu,falafel,waffles,gyoza,cheesecake"|split:"," %}
+        <button type="button" class="preset-btn" onclick="document.querySelector('[name=text_input]').value='{{ food }}'">{{ food }}</button>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="portion-section">
+      <div class="portion-header">
+        <span class="portion-label" data-i18n="Portion size">Portion size</span>
+        <span><span class="portion-value" id="portionDisplay">100</span><span class="portion-unit"> g</span></span>
+      </div>
+      <input type="range" name="portion_g" id="portionSlider" class="ns-range"
+             min="10" max="600" step="10" value="{{ form.portion_g.value|default:'100' }}"
+             oninput="updatePortion(this.value)"/>
+      <div class="portion-presets">
+        <button type="button" class="preset-btn" onclick="setPortion(50)">50g</button>
+        <button type="button" class="preset-btn" onclick="setPortion(100)">100g</button>
+        <button type="button" class="preset-btn" onclick="setPortion(150)">150g</button>
+        <button type="button" class="preset-btn" onclick="setPortion(250)">250g</button>
+        <button type="button" class="preset-btn" onclick="setPortion(400)">400g</button>
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-lg analyze-btn" id="analyzeBtn">
+      <div class="btn-inner">
+        <span data-i18n="Analyse this food →">Analyse this food →</span>
+      </div>
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span style="font-size:14px" data-i18n="Analysing…">Analysing…</span>
+      </div>
+    </button>
+  </form>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function selectMethod(method){
+  document.querySelectorAll('.method-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.input-section').forEach(s=>s.classList.remove('visible'));
+  document.getElementById('tab-'+method).classList.add('active');
+  document.getElementById('section-'+method).classList.add('visible');
+  const radio=document.querySelector(`input[name="input_method"][value="${method}"]`);
+  if(radio) radio.checked=true;
+}
+document.querySelectorAll('.method-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    const radio=tab.querySelector('input[type="radio"]');
+    if(radio) selectMethod(radio.value);
+  });
+});
+const fileInput=document.getElementById('id_image');
+const dropZone=document.getElementById('dropZone');
+dropZone.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();fileInput.click();});
+fileInput.addEventListener('change',()=>{if(fileInput.files&&fileInput.files[0]) showPreview(fileInput.files[0]);});
+dropZone.addEventListener('dragenter',e=>{e.preventDefault();dropZone.classList.add('dragover');});
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('dragover');});
+dropZone.addEventListener('dragleave',e=>{e.preventDefault();dropZone.classList.remove('dragover');});
+dropZone.addEventListener('drop',e=>{
+  e.preventDefault();dropZone.classList.remove('dragover');
+  const file=e.dataTransfer.files[0];
+  if(file&&file.type.startsWith('image/')){
+    const dt=new DataTransfer();dt.items.add(file);fileInput.files=dt.files;showPreview(file);
+  }
+});
+function showPreview(file){
+  const reader=new FileReader();
+  reader.onload=e=>{document.getElementById('imgPreview').src=e.target.result;document.getElementById('previewWrap').classList.add('visible');dropZone.style.display='none';};
+  reader.readAsDataURL(file);
+}
+function clearImage(){fileInput.value='';document.getElementById('previewWrap').classList.remove('visible');dropZone.style.display='';}
+document.getElementById('urlInput')?.addEventListener('blur',function(){
+  const url=this.value.trim();
+  if(url){document.getElementById('urlPreview').src=url;document.getElementById('urlPreviewWrap').classList.add('visible');}
+});
+function updatePortion(val){document.getElementById('portionDisplay').textContent=val;}
+function setPortion(val){document.getElementById('portionSlider').value=val;updatePortion(val);}
+updatePortion(document.getElementById('portionSlider').value);
+document.getElementById('analyzeForm').addEventListener('submit',()=>{document.getElementById('analyzeBtn').classList.add('loading');});
+</script>
+{% endblock %}

@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+db.sqlite3
+media/
+staticfiles/
+*.keras
+*.pth
+*.h5
+models/
+.DS_Store
+Thumbs.db
