@@ -18,9 +18,10 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ── Security ──────────────────────────────────────────────────────
-SECRET_KEY = config('SECRET_KEY', default='change-me-in-production-please')
-DEBUG      = config('DEBUG', default=False, cast=bool)
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+SECRET_KEY = config('SECRET_KEY')
+DEBUG = config('DEBUG', default=False, cast=bool)
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost').split(',')
+CSRF_TRUSTED_ORIGINS = ['https://*.railway.app']
 
 # ── Application definition ────────────────────────────────────────
 INSTALLED_APPS = [
@@ -79,10 +80,10 @@ WSGI_APPLICATION = 'nutriscan_project.wsgi.application'
 # Local: set DATABASE_URL=sqlite:///db.sqlite3 in .env
 DATABASE_URL = config('DATABASE_URL', default=f'sqlite:///{BASE_DIR}/db.sqlite3')
 DATABASES = {
-    'default': dj_database_url.parse(
-        DATABASE_URL,
+    'default': dj_database_url.config(
+        default=config('DATABASE_URL', default='sqlite:///db.sqlite3'),
         conn_max_age=600,
-        ssl_require=not DEBUG,
+        ssl_require=False
     )
 }
 
